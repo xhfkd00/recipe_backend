@@ -4,10 +4,15 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mysql = require('mysql');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+// const database = require('./database');
+
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const signupRouter = require('./routes/signup');
+const postRouter = require('./routes/post');
 
 const app = express();
 
@@ -21,9 +26,24 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(session({
+  secret : 'keyboard cat',
+  resave : false,
+  saveUninitialized : true,
+  store : new MySQLStore({
+    host : process.env.databaseHost,
+    port : process.env.databasePort,
+    user : process.env.databaseUser,
+    password : process.env.databasePassword,
+    database : process.env.databaseName
+  })
+}));
+
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/signup', signupRouter);
+app.use('/post', postRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -42,4 +62,4 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
-// module.exports = connection;
+

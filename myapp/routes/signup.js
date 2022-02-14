@@ -1,24 +1,33 @@
 const express = require('express');
+// const { cookie } = require('express/lib/response');
 const router = express.Router();
 const mysql = require('mysql');
 require("dotenv").config();
+// const session = require('express-session');
+// const MySQLStore = require('express-mysql-session')(session);
+// const connection = require('../database.js');
+
 
 router.get('/', function(req, res){
     // console.log('signup_page!!');
-    res.send('signup_page!!!!!!!!');
+    res.send('welcome!_for_my_recipe');
 });
-// let userList = [];
+
 
 //mysql 연결
-const connection = mysql.createConnection({
-  host : process.env.databaseHost,
-  port : process.env.databasePort,
-  user : process.env.databaseUser,
-  password : process.env.databasePassword,
-  database : process.env.databaseName
-});
+// const connection = mysql.createConnection({
+//   host : process.env.databaseHost,
+//   port : process.env.databasePort,
+//   user : process.env.databaseUser,
+//   password : process.env.databasePassword,
+//   database : process.env.databaseName
+// });
 
-connection.connect();
+// connection.connect();
+
+
+
+
 
 // 회원 가입 코드
 router.post('/', function(req,res){
@@ -75,22 +84,31 @@ router.post('/login', function(req,res){
     const userId = req.body.userId;
     const userPassword = req.body.userPassword;
 
+    // console.log(req.sessionID);
+    // console.log(req.cookies.sid);
+    // console.log(req.cookies);
+    if(req.sessionID == req.cookies.sid) return res.status(200).send('cookie_login_success')
 
     connection.query('select * from user where user_id = ?', userId, function(err, results){ // 데이터베이스에 저장된 ID 찾기
  
         if(results.length == 0) return res.status(401).end(); // 데이터베이스에 저장된 데이터가 없으면 종료
         let findId = results[0].user_id; // 데이터베이스에 저장된 인덱스를 findId에 할당
-        console.log(results[0].user_id);
-        console.log(results);
-        console.log(results.length);
-        console.log ('findId : ' + findId);
+        // console.log(results[0].user_id);
+        // console.log(results);
+        // console.log(results.length);
+        // console.log ('findId : ' + findId);
  
         let findPassword = results[0].password; // 데이터베이스에 저장된 ID의 비밀번호를 findPassword에 할당
-        console.log(results.length);
-        console.log(results[0].password);
-        console.log(findPassword);
-        console.log(userPassword);
-        if(userPassword == findPassword) res.status(200).send('login_succees.'); // 입력한 비밀번호와 데이터베이스에 저장된 비밀번호가 일치하면 로그인 성공
+        // console.log(results.length);
+        // console.log(results[0].password);
+        // console.log(findPassword);
+        // console.log(userPassword);
+        if(userPassword == findPassword) res.status(200).cookie('sid', req.sessionID).send('login_succses.'); // 입력한 비밀번호와 데이터베이스에 저장된 비밀번호가 일치하면 로그인 성공
+        // res.cookie('sid', req.sessionID);
+        // console.log(req.session.displayName);
+        // console.log('세션ID : ', req.sessionID);
+        // console.log(req.cookies);
+        // console.log('쿠키 세션ID : ', req.cookies.sid);
         if(userPassword !== findPassword) return res.status(401).send('the_password_is_wrong.') // 입력한 비밀번호와 데이터베이스에 저장된 비밀번호가 다르면 로그인 실패
        
     })
@@ -98,8 +116,15 @@ router.post('/login', function(req,res){
 
 });
 
+// 로그 아웃 코드
+router.get('/logout', function(req, res){
+    req.session.destroy();
+    res.clearCookie('sid').status(200).send('logout.');
+    
+})
+
 //회원탈퇴 코드
-router.delete('/withdrawal', function (req, res){
+router.delete('/', function (req, res){
     let userId = req.body.userId;
     let userPassword = req.body.userPassword;
 
@@ -128,7 +153,7 @@ router.delete('/withdrawal', function (req, res){
 })
 
 //회원수정 코드
-router.patch('/edit', function(req, res){
+router.patch('/', function(req, res){
     let userId = req.body.userId;
     let editNickname = req.body.editNickname;
     let userPassword = req.body.userPassword;
